@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.reactivestax.spring_boot_app.domain.WorkGroup;
+import io.reactivestax.spring_boot_app.dto.WorkGroupDTO;
 import io.reactivestax.spring_boot_app.service.WorkGroupService;
 
 @RestController
@@ -25,26 +25,27 @@ public class WorkGroupController {
     private WorkGroupService service;
 
     @GetMapping
-    public List<WorkGroup> getAllWorkGroups() {
+    public List<WorkGroupDTO> getAllWorkGroups() {
         return service.findAll();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<WorkGroup> getWorkGroupById(@PathVariable Long id) {
-        Optional<WorkGroup> workGroup = service.findById(id);
+    public ResponseEntity<WorkGroupDTO> getWorkGroupById(@PathVariable Long id) {
+        Optional<WorkGroupDTO> workGroup = service.findById(id);
         return workGroup.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public WorkGroup createWorkGroup(@RequestBody WorkGroup workGroup) {
-        return service.save(workGroup);
+    public WorkGroupDTO createWorkGroup(@RequestBody WorkGroupDTO workGroupDTO) {
+        return service.save(workGroupDTO);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<WorkGroup> updateWorkGroup(@PathVariable Long id, @RequestBody WorkGroup workGroupDetails) {
-        Optional<WorkGroup> workGroup = service.findById(id);
+    public ResponseEntity<WorkGroupDTO> updateWorkGroup(@PathVariable Long id,
+            @RequestBody WorkGroupDTO workGroupDetails) {
+        Optional<WorkGroupDTO> workGroup = service.findById(id);
         if (workGroup.isPresent()) {
-            WorkGroup updatedWorkGroup = workGroup.get();
+            WorkGroupDTO updatedWorkGroup = workGroup.get();
             updatedWorkGroup.setName(workGroupDetails.getName());
             return ResponseEntity.ok(service.save(updatedWorkGroup));
         } else {

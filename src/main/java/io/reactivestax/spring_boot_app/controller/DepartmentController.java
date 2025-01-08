@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.reactivestax.spring_boot_app.domain.Department;
+import io.reactivestax.spring_boot_app.dto.DepartmentDTO;
 import io.reactivestax.spring_boot_app.service.DepartmentService;
 
 @RestController
@@ -25,27 +25,27 @@ public class DepartmentController {
     private DepartmentService service;
 
     @GetMapping
-    public List<Department> getAllDepartments() {
+    public List<DepartmentDTO> getAllDepartments() {
         return service.findAll();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Department> getDepartmentById(@PathVariable Long id) {
-        Optional<Department> department = service.findById(id);
+    public ResponseEntity<DepartmentDTO> getDepartmentById(@PathVariable Long id) {
+        Optional<DepartmentDTO> department = service.findById(id);
         return department.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public Department createDepartment(@RequestBody Department department) {
-        return service.save(department);
+    public DepartmentDTO createDepartment(@RequestBody DepartmentDTO departmentDTO) {
+        return service.save(departmentDTO);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Department> updateDepartment(@PathVariable Long id,
-            @RequestBody Department departmentDetails) {
-        Optional<Department> department = service.findById(id);
+    public ResponseEntity<DepartmentDTO> updateDepartment(@PathVariable Long id,
+            @RequestBody DepartmentDTO departmentDetails) {
+        Optional<DepartmentDTO> department = service.findById(id);
         if (department.isPresent()) {
-            Department updatedDepartment = department.get();
+            DepartmentDTO updatedDepartment = department.get();
             updatedDepartment.setName(departmentDetails.getName());
             return ResponseEntity.ok(service.save(updatedDepartment));
         } else {

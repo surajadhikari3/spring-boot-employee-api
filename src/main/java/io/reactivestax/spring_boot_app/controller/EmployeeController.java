@@ -1,6 +1,7 @@
 package io.reactivestax.spring_boot_app.controller;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -11,10 +12,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.reactivestax.spring_boot_app.domain.Employee;
+import io.reactivestax.spring_boot_app.dto.EmployeeDTO;
 import io.reactivestax.spring_boot_app.service.EmployeeService;
 
 @RestController
@@ -25,58 +25,46 @@ public class EmployeeController {
     private EmployeeService service;
 
     @GetMapping
-    public List<Employee> getAllEmployees() {
-        return service.getAllEmployees();
+    public List<EmployeeDTO> getAllEmployees() {
+        return service.findAll();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Employee> getEmployeeById(@PathVariable Long id) {
-        return service.getEmployeeById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/employees")
-    public ResponseEntity<List<Employee>> getEmployeesByDepartmentAndSort(
-            @RequestParam(required = false) String department,
-            @RequestParam(required = false, defaultValue = "id") String sortBy) {
-        List<Employee> employees = service.findByDepartmentAndSort(department, sortBy);
-        return ResponseEntity.ok(employees);
-    }
-
-    @GetMapping("/departments/{id}/employees")
-    public ResponseEntity<List<Employee>> getEmployeesByDepartment(
-            @PathVariable Long id,
-            @RequestParam(required = false, defaultValue = "id") String sortBy) {
-        List<Employee> employees = service.findByDepartmentIdAndSort(id, sortBy);
-        return ResponseEntity.ok(employees);
+    public ResponseEntity<EmployeeDTO> getEmployeeById(@PathVariable Long id) {
+        Optional<EmployeeDTO> employee = service.findById(id);
+        return employee.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public Employee createEmployee(@RequestBody Employee employee) {
-        return service.saveEmployee(employee);
+    public EmployeeDTO createEmployee(@RequestBody EmployeeDTO employeeDTO) {
+        return service.save(employeeDTO);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Employee> updateEmployee(@PathVariable Long id, @RequestBody Employee employeeDetails) {
-        return service.getEmployeeById(id)
-                .map(employee -> {
-                    employee.setFirstName(employeeDetails.getFirstName());
-                    employee.setLastName(employeeDetails.getLastName());
-                    employee.setEmail(employeeDetails.getEmail());
-                    return ResponseEntity.ok(service.saveEmployee(employee));
-                })
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<EmployeeDTO> updateEmployee(@PathVariable Long id, @RequestBody EmployeeDTO employeeDetails) {
+        Optional<EmployeeDTO> employee = service.findById(id);
+        if (employee.isPresent()) {
+            EmployeeDTO updatedEmployee = employee.get();
+            updatedEmployee.setFirstName(employeeDetails.getFirstName());
+            updatedEmployee.setLastName(employeeDetails.getLastName());
+            updatedEmployee.setEmail(employeeDetails.getEmail());
+            updatedEmployee.setAddressId(employeeDetails.getAddressId());
+            updatedEmployee.setDepartmentId(employeeDetails.getDepartmentId());
+            updatedEmployee.setWorkGroupIds(employeeDetails.getWorkGroupIds());
+            return ResponseEntity.ok(service.save(updatedEmployee));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Object> deleteEmployee(@PathVariable Long id) {
-        return service.getEmployeeById(id)
-                .map(employee -> {
-                    service.deleteEmployee(id);
-                    return ResponseEntity.noContent().build();
-                })
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<Void> deleteEmployee(@PathVariable Long id) {
+        if (service.findById(id).isPresent()) {
+            service.deleteById(id);
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping("/{employeeId}/address/{addressId}")

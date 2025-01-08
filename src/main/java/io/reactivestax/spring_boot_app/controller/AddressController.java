@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.reactivestax.spring_boot_app.domain.Address;
+import io.reactivestax.spring_boot_app.dto.AddressDTO;
 import io.reactivestax.spring_boot_app.service.AddressService;
 
 @RestController
@@ -25,26 +25,26 @@ public class AddressController {
     private AddressService service;
 
     @GetMapping
-    public List<Address> getAllAddresses() {
+    public List<AddressDTO> getAllAddresses() {
         return service.findAll();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Address> getAddressById(@PathVariable Long id) {
-        Optional<Address> address = service.findById(id);
+    public ResponseEntity<AddressDTO> getAddressById(@PathVariable Long id) {
+        Optional<AddressDTO> address = service.findById(id);
         return address.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public Address createAddress(@RequestBody Address address) {
-        return service.save(address);
+    public AddressDTO createAddress(@RequestBody AddressDTO addressDTO) {
+        return service.save(addressDTO);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Address> updateAddress(@PathVariable Long id, @RequestBody Address addressDetails) {
-        Optional<Address> address = service.findById(id);
+    public ResponseEntity<AddressDTO> updateAddress(@PathVariable Long id, @RequestBody AddressDTO addressDetails) {
+        Optional<AddressDTO> address = service.findById(id);
         if (address.isPresent()) {
-            Address updatedAddress = address.get();
+            AddressDTO updatedAddress = address.get();
             updatedAddress.setStreet(addressDetails.getStreet());
             updatedAddress.setCity(addressDetails.getCity());
             updatedAddress.setState(addressDetails.getState());
