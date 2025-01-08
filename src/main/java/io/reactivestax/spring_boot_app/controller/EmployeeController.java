@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.reactivestax.spring_boot_app.domain.Address;
 import io.reactivestax.spring_boot_app.domain.Employee;
 import io.reactivestax.spring_boot_app.service.EmployeeService;
 
@@ -80,11 +79,11 @@ public class EmployeeController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/{employeeId}/address")
+    @PostMapping("/{employeeId}/address/{addressId}")
     public ResponseEntity<String> associateEmployeeWithAddress(
             @PathVariable Long employeeId,
-            @RequestBody Address address) {
-        service.associateEmployeeWithAddress(employeeId, address);
+            @PathVariable Long addressId) {
+        service.associateEmployeeWithAddress(employeeId, addressId);
         return ResponseEntity.ok("Address associated with Employee");
     }
 

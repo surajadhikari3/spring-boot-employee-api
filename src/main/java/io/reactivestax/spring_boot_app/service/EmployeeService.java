@@ -44,9 +44,11 @@ public class EmployeeService {
         employeeRepository.deleteById(id);
     }
 
-    public void associateEmployeeWithAddress(Long employeeId, Address address) {
+    public void associateEmployeeWithAddress(Long employeeId, Long addressId) {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
+        Address address = addressRepository.findById(addressId)
+                .orElseThrow(() -> new RuntimeException("Address not found"));        
         address.setEmployee(employee);
         employee.setAddress(address);
         addressRepository.save(address);

@@ -1,5 +1,7 @@
 package io.reactivestax.spring_boot_app.domain;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -19,6 +21,7 @@ public class Address {
     private String zipCode;
 
     @OneToOne(mappedBy = "address")
+    @JsonBackReference
     private Employee employee;
 
     public Long getId() {
