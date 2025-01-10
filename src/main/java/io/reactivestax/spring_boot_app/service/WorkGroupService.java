@@ -34,14 +34,14 @@ public class WorkGroupService {
         repository.deleteById(id);
     }
 
-    private WorkGroupDTO convertToDTO(WorkGroup workGroup) {
+    public WorkGroupDTO convertToDTO(WorkGroup workGroup) {
         WorkGroupDTO workGroupDTO = new WorkGroupDTO();
         workGroupDTO.setId(workGroup.getId());
         workGroupDTO.setName(workGroup.getName());
         return workGroupDTO;
     }
 
-    private WorkGroup convertToEntity(WorkGroupDTO workGroupDTO) {
+    public WorkGroup convertToEntity(WorkGroupDTO workGroupDTO) {
         WorkGroup workGroup = new WorkGroup();
         workGroup.setId(workGroupDTO.getId());
         workGroup.setName(workGroupDTO.getName());

@@ -34,7 +34,7 @@ public class AddressService {
         repository.deleteById(id);
     }
 
-    private AddressDTO convertToDTO(Address address) {
+    public AddressDTO convertToDTO(Address address) {
         AddressDTO addressDTO = new AddressDTO();
         addressDTO.setId(address.getId());
         addressDTO.setStreet(address.getStreet());
@@ -44,7 +44,7 @@ public class AddressService {
         return addressDTO;
     }
 
-    private Address convertToEntity(AddressDTO addressDTO) {
+    public Address convertToEntity(AddressDTO addressDTO) {
         Address address = new Address();
         address.setId(addressDTO.getId());
         address.setStreet(addressDTO.getStreet());

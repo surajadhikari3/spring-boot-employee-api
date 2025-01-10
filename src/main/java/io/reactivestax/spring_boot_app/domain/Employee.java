@@ -31,12 +31,12 @@ public class Employee {
     @JsonManagedReference
     private Address address;
 
-    @ManyToOne
+    @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "department_id")
     @JsonManagedReference
     private Department department;
 
-    @ManyToMany(mappedBy = "employees", cascade = CascadeType.PERSIST)
+    @ManyToMany(mappedBy = "employees", cascade = CascadeType.ALL)
     @JsonManagedReference
     private List<WorkGroup> workGroups = new ArrayList<>();
 

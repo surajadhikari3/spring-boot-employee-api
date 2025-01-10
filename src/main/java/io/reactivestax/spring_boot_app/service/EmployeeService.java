@@ -55,7 +55,8 @@ public class EmployeeService {
 
 
     public Employee addFullEmployee(EmployeeFullDTO employeeFullDTO) {
-       return convertToFullEntityAndPersistToDB(employeeFullDTO);
+        Employee employee = convertToFullEntityAndPersistToDB(employeeFullDTO);
+        return employeeRepository.save(employee);
     }
 
     public void deleteById(Long id) {
@@ -81,13 +82,13 @@ public class EmployeeService {
         employee.setLastName(employeeDTO.getLastName());
         employee.setEmail(employeeDTO.getEmail());
         // Assuming you have methods to fetch Address, Department, and WorkGroups by their IDs
-        if(employeeDTO.getAddressId() != null){
+        if (employeeDTO.getAddressId() != null) {
             employee.setAddress(fetchAddressById(employeeDTO.getAddressId()));
         }
-        if(employeeDTO.getDepartmentId() != null){
+        if (employeeDTO.getDepartmentId() != null) {
             employee.setDepartment(fetchDepartmentById(employeeDTO.getDepartmentId()));
-        }    
-        if(employeeDTO.getWorkGroupIds() != null){
+        }
+        if (employeeDTO.getWorkGroupIds() != null) {
             employee.setWorkGroups(fetchWorkGroupsByIds(employeeDTO.getWorkGroupIds()));
         }
 
@@ -100,27 +101,17 @@ public class EmployeeService {
         employee.setFirstName(employeeDTO.getFirstName());
         employee.setLastName(employeeDTO.getLastName());
         employee.setEmail(employeeDTO.getEmail());
-//        employee.setAddress(employee.getAddress());
-        // Assuming you have methods to fetch Address, Department, and WorkGroups by their IDs
-        if(employeeDTO.getAddressDTO() != null){
-            AddressDTO savedAddress = addressService.save(employeeDTO.getAddressDTO());
-            employee.setAddress(fetchAddressById(savedAddress.getId()));
+        if (employeeDTO.getAddressDTO() != null) {
+            employee.setAddress(addressService.convertToEntity(employeeDTO.getAddressDTO()));
         }
-        if(employeeDTO.getDepartmentDTO() != null){
-            DepartmentDTO savedDepartment = departmentService.save(employeeDTO.getDepartmentDTO());
-            employee.setDepartment(fetchDepartmentById(savedDepartment.getId()));
+        if (employeeDTO.getDepartmentDTO() != null) {
+            employee.setDepartment(departmentService.convertToEntity(employeeDTO.getDepartmentDTO()));
         }
-        if(employeeDTO.getWorkGroupDTOS() != null){
-            List<Long> workGroupIds = new ArrayList<>();
-            employeeDTO.getWorkGroupDTOS().forEach(workGroupDTO -> {
-                WorkGroupDTO savedWorkGroupDTO = workGroupService.save(workGroupDTO);
-                workGroupIds.add(savedWorkGroupDTO.getId());
-            });
-            employee.setWorkGroups(fetchWorkGroupsByIds(workGroupIds));
-            List<WorkGroup> workGroups = workGroupRepository.findAllById(workGroupIds);
-            workGroups.forEach(workGroup -> workGroup.getEmployees().add(employee));
-            employeeRepository.save(employee);
-            workGroupRepository.saveAll(workGroups);
+        if (employeeDTO.getWorkGroupDTOS() != null) {
+            ArrayList<WorkGroup> workGroups = new ArrayList<>();
+            employeeDTO.getWorkGroupDTOS().forEach(workGroupDTO ->
+                workGroups.add(workGroupService.convertToEntity(workGroupDTO)));
+            employee.setWorkGroups(workGroups);
         }
         return employee;
     }
@@ -143,7 +134,7 @@ public class EmployeeService {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
         Address address = addressRepository.findById(addressId)
-                .orElseThrow(() -> new RuntimeException("Address not found"));        
+                .orElseThrow(() -> new RuntimeException("Address not found"));
         address.setEmployee(employee);
         employee.setAddress(address);
         addressRepository.save(address);
@@ -175,7 +166,7 @@ public class EmployeeService {
     public void associateEmployeeWithNewDepartment(Long employeeId, DepartmentDTO departmentDTO) {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
-        if(departmentDTO.getEmployeeIds() == null){
+        if (departmentDTO.getEmployeeIds() == null) {
             departmentDTO.setEmployeeIds(List.of(employeeId));
         }
         DepartmentDTO savedDepartment = departmentService.save(departmentDTO);
@@ -206,7 +197,7 @@ public class EmployeeService {
         List<WorkGroup> workGroups = workGroupRepository.findAllById(workGroupIds);
         employee.getWorkGroups().addAll(workGroups);
         workGroups.forEach(workGroup -> workGroup.getEmployees().add(employee));
-        workGroupRepository.saveAll(workGroups);
+//        workGroupRepository.saveAll(workGroups);
         employeeRepository.save(employee);
     }
 

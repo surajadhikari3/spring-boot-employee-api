@@ -34,14 +34,14 @@ public class DepartmentService {
         repository.deleteById(id);
     }
 
-    private DepartmentDTO convertToDTO(Department department) {
+    public DepartmentDTO convertToDTO(Department department) {
         DepartmentDTO departmentDTO = new DepartmentDTO();
         departmentDTO.setId(department.getId());
         departmentDTO.setName(department.getName());
         return departmentDTO;
     }
 
-    private Department convertToEntity(DepartmentDTO departmentDTO) {
+    public Department convertToEntity(DepartmentDTO departmentDTO) {
         Department department = new Department();
         department.setId(departmentDTO.getId());
         department.setName(departmentDTO.getName());
