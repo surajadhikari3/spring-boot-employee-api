@@ -36,7 +36,7 @@ public class Employee {
     @JsonManagedReference
     private Department department;
 
-    @ManyToMany(mappedBy = "employees")
+    @ManyToMany(mappedBy = "employees", cascade = CascadeType.PERSIST)
     @JsonManagedReference
     private List<WorkGroup> workGroups = new ArrayList<>();
 

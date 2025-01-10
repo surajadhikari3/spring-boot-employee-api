@@ -1,9 +1,11 @@
 package io.reactivestax.spring_boot_app.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import io.reactivestax.spring_boot_app.dto.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -12,7 +14,6 @@ import io.reactivestax.spring_boot_app.domain.Address;
 import io.reactivestax.spring_boot_app.domain.Department;
 import io.reactivestax.spring_boot_app.domain.Employee;
 import io.reactivestax.spring_boot_app.domain.WorkGroup;
-import io.reactivestax.spring_boot_app.dto.EmployeeDTO;
 import io.reactivestax.spring_boot_app.repository.AddressRepository;
 import io.reactivestax.spring_boot_app.repository.DepartmentRepository;
 import io.reactivestax.spring_boot_app.repository.EmployeeRepository;
@@ -25,8 +26,17 @@ public class EmployeeService {
     private EmployeeRepository employeeRepository;
     @Autowired
     private AddressRepository addressRepository;
+
+    @Autowired
+    private AddressService addressService;
     @Autowired
     private DepartmentRepository departmentRepository;
+
+    @Autowired
+    private DepartmentService departmentService;
+
+    @Autowired
+    private WorkGroupService workGroupService;
     @Autowired
     private WorkGroupRepository workGroupRepository;
 
@@ -41,6 +51,11 @@ public class EmployeeService {
     public EmployeeDTO save(EmployeeDTO employeeDTO) {
         Employee employee = convertToEntity(employeeDTO);
         return convertToDTO(employeeRepository.save(employee));
+    }
+
+
+    public Employee addFullEmployee(EmployeeFullDTO employeeFullDTO) {
+       return convertToFullEntityAndPersistToDB(employeeFullDTO);
     }
 
     public void deleteById(Long id) {
@@ -79,6 +94,37 @@ public class EmployeeService {
         return employee;
     }
 
+    private Employee convertToFullEntityAndPersistToDB(EmployeeFullDTO employeeDTO) {
+        Employee employee = new Employee();
+        employee.setId(employeeDTO.getId());
+        employee.setFirstName(employeeDTO.getFirstName());
+        employee.setLastName(employeeDTO.getLastName());
+        employee.setEmail(employeeDTO.getEmail());
+//        employee.setAddress(employee.getAddress());
+        // Assuming you have methods to fetch Address, Department, and WorkGroups by their IDs
+        if(employeeDTO.getAddressDTO() != null){
+            AddressDTO savedAddress = addressService.save(employeeDTO.getAddressDTO());
+            employee.setAddress(fetchAddressById(savedAddress.getId()));
+        }
+        if(employeeDTO.getDepartmentDTO() != null){
+            DepartmentDTO savedDepartment = departmentService.save(employeeDTO.getDepartmentDTO());
+            employee.setDepartment(fetchDepartmentById(savedDepartment.getId()));
+        }
+        if(employeeDTO.getWorkGroupDTOS() != null){
+            List<Long> workGroupIds = new ArrayList<>();
+            employeeDTO.getWorkGroupDTOS().forEach(workGroupDTO -> {
+                WorkGroupDTO savedWorkGroupDTO = workGroupService.save(workGroupDTO);
+                workGroupIds.add(savedWorkGroupDTO.getId());
+            });
+            employee.setWorkGroups(fetchWorkGroupsByIds(workGroupIds));
+            List<WorkGroup> workGroups = workGroupRepository.findAllById(workGroupIds);
+            workGroups.forEach(workGroup -> workGroup.getEmployees().add(employee));
+            employeeRepository.save(employee);
+            workGroupRepository.saveAll(workGroups);
+        }
+        return employee;
+    }
+
     private Address fetchAddressById(Long addressId) {
         return addressRepository.findById(addressId)
                 .orElseThrow(() -> new RuntimeException("Address not found"));
@@ -93,11 +139,23 @@ public class EmployeeService {
         return workGroupRepository.findAllById(workGroupIds);
     }
 
-    public void associateEmployeeWithAddress(Long employeeId, Long addressId) {
+    public void associateEmployeeWithNewAddress(Long employeeId, Long addressId) {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
         Address address = addressRepository.findById(addressId)
                 .orElseThrow(() -> new RuntimeException("Address not found"));        
+        address.setEmployee(employee);
+        employee.setAddress(address);
+        addressRepository.save(address);
+        employeeRepository.save(employee);
+    }
+
+    public void associateEmployeeWithNewAddress(Long employeeId, AddressDTO addressDTO) {
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+        AddressDTO savedAddress = addressService.save(addressDTO);
+        Address address = addressRepository.findById(savedAddress.getId())
+                .orElseThrow(() -> new RuntimeException("Address not found"));
         address.setEmployee(employee);
         employee.setAddress(address);
         addressRepository.save(address);
@@ -113,6 +171,20 @@ public class EmployeeService {
         employeeRepository.save(employee);
     }
 
+
+    public void associateEmployeeWithNewDepartment(Long employeeId, DepartmentDTO departmentDTO) {
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+        if(departmentDTO.getEmployeeIds() == null){
+            departmentDTO.setEmployeeIds(List.of(employeeId));
+        }
+        DepartmentDTO savedDepartment = departmentService.save(departmentDTO);
+        Department department = departmentRepository.findById(savedDepartment.getId())
+                .orElseThrow(() -> new RuntimeException("Department not found"));
+        employee.setDepartment(department);
+        employeeRepository.save(employee);
+    }
+
     public void addEmployeeToWorkGroups(Long employeeId, List<Long> workGroupIds) {
         Employee employee = employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("Employee not found"));
@@ -120,6 +192,22 @@ public class EmployeeService {
         employee.getWorkGroups().addAll(workGroups);
         workGroups.forEach(workGroup -> workGroup.getEmployees().add(employee));
         workGroupRepository.saveAll(workGroups);
+        employeeRepository.save(employee);
+    }
+
+    public void associateEmployeeWithNewWorkGroups(Long employeeId, List<WorkGroupDTO> workGroupDTOS) {
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("Employee not found"));
+        List<Long> workGroupIds = new ArrayList<>();
+        workGroupDTOS.forEach(workGroupDTO -> {
+            WorkGroupDTO savedWorkGroupDTO = workGroupService.save(workGroupDTO);
+            workGroupIds.add(savedWorkGroupDTO.getId());
+        });
+        List<WorkGroup> workGroups = workGroupRepository.findAllById(workGroupIds);
+        employee.getWorkGroups().addAll(workGroups);
+        workGroups.forEach(workGroup -> workGroup.getEmployees().add(employee));
+        workGroupRepository.saveAll(workGroups);
+        employeeRepository.save(employee);
     }
 
     public List<Employee> findByDepartmentAndSort(String department, String sortBy) {
@@ -133,4 +221,6 @@ public class EmployeeService {
     public List<Employee> findByDepartmentIdAndSort(Long departmentId, String sortBy) {
         return employeeRepository.findByDepartmentId(departmentId, Sort.by(sortBy));
     }
+
+
 }
